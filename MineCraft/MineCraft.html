@@ -1,0 +1,2218 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>CraftMine</title>
+
+<style>
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html,
+body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: #87ceeb;
+    font-family: Arial, sans-serif;
+}
+
+canvas {
+    display: block;
+}
+
+/* =========================
+   ÉCRAN DE DÉPART
+========================= */
+
+#startScreen {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    background:
+        linear-gradient(
+            rgba(0,0,0,0.65),
+            rgba(0,0,0,0.8)
+        );
+}
+
+#startBox {
+    width: 460px;
+    max-width: 90%;
+
+    padding: 35px;
+
+    background: #202020;
+
+    border: 2px solid #555;
+    border-radius: 12px;
+
+    text-align: center;
+    color: white;
+
+    box-shadow:
+        0 15px 50px rgba(0,0,0,0.7);
+}
+
+#startBox h1 {
+    font-size: 48px;
+    margin-bottom: 15px;
+}
+
+#startBox p {
+    color: #ddd;
+    margin: 7px 0;
+}
+
+#playButton {
+    margin-top: 25px;
+
+    padding: 14px 35px;
+
+    border: none;
+    border-radius: 6px;
+
+    background: #55a83f;
+    color: white;
+
+    font-size: 20px;
+    font-weight: bold;
+
+    cursor: pointer;
+}
+
+#playButton:hover {
+    background: #6abb50;
+}
+
+/* =========================
+   VISEUR
+========================= */
+
+#crosshair {
+    position: fixed;
+
+    left: 50%;
+    top: 50%;
+
+    width: 20px;
+    height: 20px;
+
+    transform: translate(-50%, -50%);
+
+    pointer-events: none;
+
+    z-index: 100;
+}
+
+#crosshair::before {
+    content: "";
+
+    position: absolute;
+
+    left: 9px;
+    top: 0;
+
+    width: 2px;
+    height: 20px;
+
+    background: white;
+
+    box-shadow: 0 0 2px black;
+}
+
+#crosshair::after {
+    content: "";
+
+    position: absolute;
+
+    left: 0;
+    top: 9px;
+
+    width: 20px;
+    height: 2px;
+
+    background: white;
+
+    box-shadow: 0 0 2px black;
+}
+
+/* =========================
+   INFORMATIONS
+========================= */
+
+#info {
+    position: fixed;
+
+    left: 15px;
+    top: 15px;
+
+    z-index: 100;
+
+    padding: 10px 14px;
+
+    background: rgba(0,0,0,0.5);
+
+    color: white;
+
+    border-radius: 6px;
+
+    font-size: 14px;
+
+    line-height: 1.5;
+
+    pointer-events: none;
+}
+
+/* =========================
+   HOTBAR
+========================= */
+
+#hotbar {
+    position: fixed;
+
+    left: 50%;
+    bottom: 20px;
+
+    transform: translateX(-50%);
+
+    display: flex;
+
+    gap: 5px;
+
+    padding: 6px;
+
+    background: rgba(0,0,0,0.55);
+
+    border: 2px solid rgba(255,255,255,0.4);
+
+    border-radius: 6px;
+
+    z-index: 100;
+}
+
+.slot {
+    position: relative;
+
+    width: 52px;
+    height: 52px;
+
+    background: rgba(30,30,30,0.85);
+
+    border: 3px solid #555;
+
+    display: flex;
+
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+}
+
+.slot.selected {
+    border-color: white;
+
+    box-shadow:
+        0 0 8px white;
+}
+
+.slot img {
+    width: 36px;
+    height: 36px;
+
+    image-rendering: pixelated;
+}
+
+.slot-number {
+    position: absolute;
+
+    right: 3px;
+    bottom: 1px;
+
+    color: white;
+
+    font-size: 12px;
+
+    text-shadow:
+        1px 1px 2px black;
+}
+
+/* =========================
+   FPS
+========================= */
+
+#fps {
+    position: fixed;
+
+    right: 15px;
+    top: 15px;
+
+    z-index: 100;
+
+    color: white;
+
+    background: rgba(0,0,0,0.45);
+
+    padding: 6px 10px;
+
+    border-radius: 5px;
+
+    font-size: 13px;
+
+    pointer-events: none;
+}
+
+</style>
+</head>
+
+<body>
+
+<!-- =========================
+     ÉCRAN DE DÉPART
+========================= -->
+
+<div id="startScreen">
+
+    <div id="startBox">
+
+        <h1>CraftMine</h1>
+
+        <p>Un Minecraft-like créé en HTML.</p>
+
+        <p><b>ZQSD</b> : se déplacer</p>
+
+        <p><b>Espace</b> : sauter</p>
+
+        <p><b>Souris</b> : regarder</p>
+
+        <p><b>Clic gauche</b> : casser</p>
+
+        <p><b>Clic droit</b> : poser</p>
+
+        <p><b>1 à 8</b> : sélectionner un bloc</p>
+
+        <button id="playButton">
+            JOUER
+        </button>
+
+    </div>
+
+</div>
+
+
+<!-- =========================
+     INTERFACE
+========================= -->
+
+<div id="info">
+
+    <b>CraftMine</b><br>
+
+    ZQSD : déplacement<br>
+
+    Espace : saut<br>
+
+    Clic gauche : casser<br>
+
+    Clic droit : poser
+
+</div>
+
+<div id="fps">
+    FPS : 0
+</div>
+
+<div id="crosshair"></div>
+
+
+<!-- =========================
+     HOTBAR
+========================= -->
+
+<div id="hotbar"></div>
+
+
+<!-- =========================
+     THREE.JS
+========================= -->
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+
+
+<script>
+
+/*
+============================================================
+ CRAFTMINE
+ Minecraft-like 3D
+============================================================
+*/
+
+
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+const TEXTURE_PATH = "./textures/";
+
+
+/* =========================================================
+   SCÈNE
+========================================================= */
+
+const scene = new THREE.Scene();
+
+scene.background =
+    new THREE.Color(0x87ceeb);
+
+scene.fog =
+    new THREE.Fog(
+        0x87ceeb,
+        35,
+        130
+    );
+
+
+/* =========================================================
+   CAMÉRA
+========================================================= */
+
+const camera =
+    new THREE.PerspectiveCamera(
+        75,
+        window.innerWidth /
+        window.innerHeight,
+        0.1,
+        500
+    );
+
+
+/* =========================================================
+   RENDERER
+========================================================= */
+
+const renderer =
+    new THREE.WebGLRenderer({
+        antialias: false
+    });
+
+renderer.setSize(
+    window.innerWidth,
+    window.innerHeight
+);
+
+renderer.setPixelRatio(
+    Math.min(
+        window.devicePixelRatio,
+        2
+    )
+);
+
+renderer.shadowMap.enabled = true;
+
+renderer.shadowMap.type =
+    THREE.PCFSoftShadowMap;
+
+document.body.appendChild(
+    renderer.domElement
+);
+
+
+/* =========================================================
+   LUMIÈRES
+========================================================= */
+
+const hemisphere =
+    new THREE.HemisphereLight(
+        0xbfe8ff,
+        0x584532,
+        1.5
+    );
+
+scene.add(hemisphere);
+
+
+const sun =
+    new THREE.DirectionalLight(
+        0xffffff,
+        2
+    );
+
+sun.position.set(
+    40,
+    80,
+    30
+);
+
+sun.castShadow = true;
+
+sun.shadow.mapSize.width = 2048;
+sun.shadow.mapSize.height = 2048;
+
+sun.shadow.camera.left = -80;
+sun.shadow.camera.right = 80;
+sun.shadow.camera.top = 80;
+sun.shadow.camera.bottom = -80;
+
+scene.add(sun);
+
+
+/* =========================================================
+   CHARGEUR DE TEXTURES
+========================================================= */
+
+const textureLoader =
+    new THREE.TextureLoader();
+
+
+/*
+   Les textures pixel-art doivent
+   rester nettes.
+*/
+
+function prepareTexture(texture) {
+
+    texture.magFilter =
+        THREE.NearestFilter;
+
+    texture.minFilter =
+        THREE.NearestFilter;
+
+    texture.colorSpace =
+        THREE.SRGBColorSpace;
+
+    return texture;
+}
+
+
+/* =========================================================
+   CRÉATION D'UNE TEXTURE
+========================================================= */
+
+function loadTexture(path) {
+
+    const texture = textureLoader.load(
+        path,
+        function(texture) {
+            console.log("Texture chargée :", path);
+        },
+        undefined,
+        function(error) {
+            console.error("ERREUR TEXTURE :", path, error);
+        }
+    );
+
+    texture.magFilter = THREE.NearestFilter;
+    texture.minFilter = THREE.NearestFilter;
+
+    texture.colorSpace = THREE.SRGBColorSpace;
+
+    return texture;
+}
+
+/* =========================================================
+   TYPES DE BLOCS
+========================================================= */
+
+const BLOCK_TYPES = {
+
+    bedrock: {
+        name: "Bedrock",
+        folder: "bedrock",
+        single: true
+    },
+
+    herbe: {
+        name: "Herbe",
+        folder: "herbe",
+        multiFace: true
+    },
+
+    terre: {
+        name: "Terre",
+        folder: "terre",
+        single: true
+    },
+
+    pierre: {
+        name: "Pierre",
+        folder: "pierre",
+        single: true
+    },
+
+    buche: {
+        name: "Bûche",
+        folder: "buche",
+        multiFace: true
+    },
+
+    feuille: {
+        name: "Feuille",
+        folder: "feuille",
+        single: true,
+        transparent: true
+    },
+
+    planche: {
+        name: "Planche",
+        folder: "planche",
+        multiFace: true
+    },
+
+    vitre: {
+        name: "Vitre",
+        folder: "vitre",
+        single: true,
+        transparent: true,
+        opacity: 0.45
+    }
+
+};
+
+
+/* =========================================================
+   MATÉRIAUX DES BLOCS
+========================================================= */
+
+const materialCache = {};
+
+
+/*
+   Crée les 6 faces d'un cube.
+
+   Three.js utilise :
+
+   0 = droite
+   1 = gauche
+   2 = dessus
+   3 = dessous
+   4 = devant
+   5 = derrière
+*/
+
+function createBlockMaterials(type) {
+
+    if (materialCache[type]) {
+
+        return materialCache[type];
+    }
+
+
+    const data =
+        BLOCK_TYPES[type];
+
+
+    let materials;
+
+
+    /*
+    ---------------------------------------------
+    Texture unique
+    ---------------------------------------------
+    */
+
+    if (data.single) {
+
+        const texture =
+            loadTexture(
+                TEXTURE_PATH +
+                data.folder +
+                "/" +
+                data.folder +
+                ".png"
+            );
+
+        const material =
+            new THREE.MeshLambertMaterial({
+
+                map: texture,
+
+                transparent:
+                    data.transparent || false,
+
+                opacity:
+                    data.opacity ?? 1,
+
+                alphaTest:
+                    data.transparent ? 0.1 : 0
+
+            });
+
+
+        materials = [
+            material,
+            material,
+            material,
+            material,
+            material,
+            material
+        ];
+
+    }
+
+
+    /*
+    ---------------------------------------------
+    Dessus / dessous / côté
+    ---------------------------------------------
+    */
+
+    else if (data.multiFace) {
+
+        const top =
+            loadTexture(
+                TEXTURE_PATH +
+                data.folder +
+                "/dessus_" +
+                data.folder +
+                ".png"
+            );
+
+
+        const bottom =
+            loadTexture(
+                TEXTURE_PATH +
+                data.folder +
+                "/dessous_" +
+                data.folder +
+                ".png"
+            );
+
+
+        const side =
+            loadTexture(
+                TEXTURE_PATH +
+                data.folder +
+                "/cote_" +
+                data.folder +
+                ".png"
+            );
+
+
+        const topMaterial =
+            new THREE.MeshLambertMaterial({
+                map: top
+            });
+
+
+        const bottomMaterial =
+            new THREE.MeshLambertMaterial({
+                map: bottom
+            });
+
+
+        const sideMaterial =
+            new THREE.MeshLambertMaterial({
+                map: side
+            });
+
+
+        materials = [
+
+            sideMaterial,
+            sideMaterial,
+
+            topMaterial,
+
+            bottomMaterial,
+
+            sideMaterial,
+            sideMaterial
+
+        ];
+
+    }
+
+
+    materialCache[type] =
+        materials;
+
+    return materials;
+}
+
+
+/* =========================================================
+   GÉOMÉTRIE
+========================================================= */
+
+const cubeGeometry =
+    new THREE.BoxGeometry(
+        1,
+        1,
+        1
+    );
+
+
+/* =========================================================
+   MONDE
+========================================================= */
+
+const world =
+    new Map();
+
+
+function blockKey(x, y, z) {
+
+    return (
+        x +
+        "," +
+        y +
+        "," +
+        z
+    );
+}
+
+
+/* =========================================================
+   AJOUTER UN BLOC
+========================================================= */
+
+function addBlock(
+    x,
+    y,
+    z,
+    type
+) {
+
+    const key =
+        blockKey(
+            x,
+            y,
+            z
+        );
+
+
+    if (world.has(key)) {
+
+        return;
+    }
+
+
+    const materials =
+        createBlockMaterials(type);
+
+
+    const mesh =
+        new THREE.Mesh(
+            cubeGeometry,
+            materials
+        );
+
+
+    mesh.position.set(
+        x + 0.5,
+        y + 0.5,
+        z + 0.5
+    );
+
+
+    mesh.castShadow = true;
+    mesh.receiveShadow = true;
+
+
+    mesh.userData = {
+
+        x: x,
+        y: y,
+        z: z,
+
+        type: type
+
+    };
+
+
+    scene.add(mesh);
+
+    world.set(
+        key,
+        mesh
+    );
+}
+
+
+/* =========================================================
+   SUPPRIMER UN BLOC
+========================================================= */
+
+function removeBlock(
+    x,
+    y,
+    z
+) {
+
+    const key =
+        blockKey(
+            x,
+            y,
+            z
+        );
+
+
+    const block =
+        world.get(key);
+
+
+    if (!block) {
+
+        return;
+    }
+
+
+    scene.remove(block);
+
+    world.delete(key);
+}
+
+
+/* =========================================================
+   TERRAIN
+========================================================= */
+
+const WORLD_SIZE = 40;
+
+
+function terrainHeight(
+    x,
+    z
+) {
+
+    let height = 5;
+
+
+    height +=
+        Math.sin(x * 0.16) * 2;
+
+
+    height +=
+        Math.cos(z * 0.14) * 2;
+
+
+    height +=
+        Math.sin(
+            (x + z) * 0.07
+        ) * 2;
+
+
+    height +=
+        Math.cos(
+            (x - z) * 0.05
+        ) * 1.5;
+
+
+    return Math.max(
+        1,
+        Math.floor(height)
+    );
+}
+
+
+/* =========================================================
+   ARBRE
+========================================================= */
+
+function generateTree(
+    x,
+    y,
+    z
+) {
+
+    const trunkHeight = 4;
+
+
+    /*
+       Tronc
+    */
+
+    for (
+        let i = 0;
+        i < trunkHeight;
+        i++
+    ) {
+
+        addBlock(
+            x,
+            y + i,
+            z,
+            "buche"
+        );
+    }
+
+
+    /*
+       Feuillage
+    */
+
+    const top =
+        y + trunkHeight;
+
+
+    for (
+        let dx = -2;
+        dx <= 2;
+        dx++
+    ) {
+
+        for (
+            let dz = -2;
+            dz <= 2;
+            dz++
+        ) {
+
+            for (
+                let dy = -1;
+                dy <= 1;
+                dy++
+            ) {
+
+                const distance =
+                    Math.abs(dx) +
+                    Math.abs(dz) +
+                    Math.abs(dy);
+
+
+                if (
+                    distance <= 3
+                ) {
+
+                    addBlock(
+                        x + dx,
+                        top + dy,
+                        z + dz,
+                        "feuille"
+                    );
+
+                }
+
+            }
+
+        }
+
+    }
+
+
+    /*
+       Feuilles supplémentaires
+    */
+
+    addBlock(
+        x,
+        top + 2,
+        z,
+        "feuille"
+    );
+}
+
+
+/* =========================================================
+   GÉNÉRATION DU MONDE
+========================================================= */
+
+function generateWorld() {
+
+    for (
+        let x = -WORLD_SIZE;
+        x <= WORLD_SIZE;
+        x++
+    ) {
+
+        for (
+            let z = -WORLD_SIZE;
+            z <= WORLD_SIZE;
+            z++
+        ) {
+
+            const height =
+                terrainHeight(
+                    x,
+                    z
+                );
+
+
+            /*
+               Bedrock
+            */
+
+            addBlock(
+                x,
+                0,
+                z,
+                "bedrock"
+            );
+
+
+            /*
+               Pierre
+            */
+
+            for (
+                let y = 1;
+                y < height - 3;
+                y++
+            ) {
+
+                addBlock(
+                    x,
+                    y,
+                    z,
+                    "pierre"
+                );
+            }
+
+
+            /*
+               Terre
+            */
+
+            for (
+                let y =
+                    Math.max(
+                        1,
+                        height - 3
+                    );
+
+                y < height;
+
+                y++
+            ) {
+
+                addBlock(
+                    x,
+                    y,
+                    z,
+                    "terre"
+                );
+            }
+
+
+            /*
+               Herbe
+            */
+
+            addBlock(
+                x,
+                height,
+                z,
+                "herbe"
+            );
+
+
+            /*
+               Arbres
+            */
+
+            if (
+                Math.random() < 0.018 &&
+                height >= 5
+            ) {
+
+                /*
+                   Évite les arbres
+                   trop près du spawn.
+                */
+
+                if (
+                    Math.abs(x) > 5 ||
+                    Math.abs(z) > 5
+                ) {
+
+                    generateTree(
+                        x,
+                        height + 1,
+                        z
+                    );
+                }
+            }
+        }
+    }
+}
+
+
+generateWorld();
+
+
+/* =========================================================
+   JOUEUR
+========================================================= */
+
+const player = {
+
+    position:
+        new THREE.Vector3(
+            0,
+            terrainHeight(0, 0) + 2,
+            0
+        ),
+
+    velocity:
+        new THREE.Vector3(),
+
+    width: 0.6,
+
+    height: 1.8,
+
+    speed: 6,
+
+    jumpPower: 8,
+
+    gravity: 22,
+
+    onGround: false
+
+};
+
+
+camera.position.copy(
+    player.position
+);
+
+camera.position.y += 1.6;
+
+
+/* =========================================================
+   CONTRÔLES
+========================================================= */
+
+const keys = {};
+
+
+document.addEventListener(
+    "keydown",
+    event => {
+
+        keys[event.code] = true;
+
+
+        if (
+            event.code === "Space" ||
+            event.code === "KeyZ" ||
+            event.code === "KeyQ" ||
+            event.code === "KeyS" ||
+            event.code === "KeyD"
+        ) {
+
+            event.preventDefault();
+        }
+
+
+        /*
+           Sélection 1-8
+        */
+
+        const number =
+            Number(event.key);
+
+
+        if (
+            number >= 1 &&
+            number <= 8
+        ) {
+
+            selectSlot(
+                number - 1
+            );
+        }
+    }
+);
+
+
+document.addEventListener(
+    "keyup",
+    event => {
+
+        keys[event.code] = false;
+    }
+);
+
+
+/* =========================================================
+   CAMÉRA / SOURIS
+========================================================= */
+
+let yaw = 0;
+
+let pitch = 0;
+
+
+document.addEventListener(
+    "mousemove",
+    event => {
+
+        if (
+            document.pointerLockElement !==
+            renderer.domElement
+        ) {
+
+            return;
+        }
+
+
+        yaw -=
+            event.movementX *
+            0.002;
+
+
+        pitch -=
+            event.movementY *
+            0.002;
+
+
+        const limit =
+            Math.PI / 2 - 0.05;
+
+
+        pitch =
+            Math.max(
+                -limit,
+                Math.min(
+                    limit,
+                    pitch
+                )
+            );
+    }
+);
+
+
+/* =========================================================
+   COLLISIONS
+========================================================= */
+
+function collidesAt(
+    x,
+    y,
+    z
+) {
+
+    const minX =
+        Math.floor(
+            x - player.width / 2
+        );
+
+    const maxX =
+        Math.floor(
+            x + player.width / 2
+        );
+
+
+    const minY =
+        Math.floor(y);
+
+
+    const maxY =
+        Math.floor(
+            y + player.height
+        );
+
+
+    const minZ =
+        Math.floor(
+            z - player.width / 2
+        );
+
+    const maxZ =
+        Math.floor(
+            z + player.width / 2
+        );
+
+
+    for (
+        let bx = minX;
+        bx <= maxX;
+        bx++
+    ) {
+
+        for (
+            let by = minY;
+            by <= maxY;
+            by++
+        ) {
+
+            for (
+                let bz = minZ;
+                bz <= maxZ;
+                bz++
+            ) {
+
+                if (
+                    world.has(
+                        blockKey(
+                            bx,
+                            by,
+                            bz
+                        )
+                    )
+                ) {
+
+                    return true;
+                }
+            }
+        }
+    }
+
+
+    return false;
+}
+
+
+/* =========================================================
+   MOUVEMENT
+========================================================= */
+
+function updatePlayer(delta) {
+
+    /*
+       Direction avant
+    */
+
+    const forward =
+        new THREE.Vector3(
+            -Math.sin(yaw),
+            0,
+            -Math.cos(yaw)
+        );
+
+
+    /*
+       Direction droite
+    */
+
+    const right =
+        new THREE.Vector3(
+            Math.cos(yaw),
+            0,
+            -Math.sin(yaw)
+        );
+
+
+    const movement =
+        new THREE.Vector3();
+
+
+    /*
+       Z = avancer
+    */
+
+    if (keys["KeyZ"]) {
+
+        movement.add(
+            forward
+        );
+    }
+
+
+    /*
+       S = reculer
+    */
+
+    if (keys["KeyS"]) {
+
+        movement.sub(
+            forward
+        );
+    }
+
+
+    /*
+       D = droite
+    */
+
+    if (keys["KeyD"]) {
+
+        movement.add(
+            right
+        );
+    }
+
+
+    /*
+       Q = gauche
+    */
+
+    if (keys["KeyQ"]) {
+
+        movement.sub(
+            right
+        );
+    }
+
+
+    if (
+        movement.lengthSq() > 0
+    ) {
+
+        movement.normalize();
+
+        movement.multiplyScalar(
+            player.speed
+        );
+    }
+
+
+    player.velocity.x =
+        movement.x;
+
+    player.velocity.z =
+        movement.z;
+
+
+    /*
+       Gravité
+    */
+
+    player.velocity.y -=
+        player.gravity *
+        delta;
+
+
+    /*
+       Saut
+    */
+
+    if (
+        keys["Space"] &&
+        player.onGround
+    ) {
+
+        player.velocity.y =
+            player.jumpPower;
+
+        player.onGround = false;
+    }
+
+
+    /*
+       X
+    */
+
+    const newX =
+        player.position.x +
+        player.velocity.x *
+        delta;
+
+
+    if (
+        !collidesAt(
+            newX,
+            player.position.y,
+            player.position.z
+        )
+    ) {
+
+        player.position.x =
+            newX;
+
+    } else {
+
+        player.velocity.x = 0;
+    }
+
+
+    /*
+       Z
+    */
+
+    const newZ =
+        player.position.z +
+        player.velocity.z *
+        delta;
+
+
+    if (
+        !collidesAt(
+            player.position.x,
+            player.position.y,
+            newZ
+        )
+    ) {
+
+        player.position.z =
+            newZ;
+
+    } else {
+
+        player.velocity.z = 0;
+    }
+
+
+    /*
+       Y
+    */
+
+    const newY =
+        player.position.y +
+        player.velocity.y *
+        delta;
+
+
+    if (
+        !collidesAt(
+            player.position.x,
+            newY,
+            player.position.z
+        )
+    ) {
+
+        player.position.y =
+            newY;
+
+        player.onGround = false;
+
+    } else {
+
+        if (
+            player.velocity.y < 0
+        ) {
+
+            player.onGround = true;
+        }
+
+
+        player.velocity.y = 0;
+    }
+
+
+    /*
+       Si le joueur tombe
+    */
+
+    if (
+        player.position.y < -20
+    ) {
+
+        player.position.set(
+            0,
+            terrainHeight(0, 0) + 3,
+            0
+        );
+
+        player.velocity.set(
+            0,
+            0,
+            0
+        );
+    }
+
+
+    /*
+       Position caméra
+    */
+
+    camera.position.set(
+        player.position.x,
+        player.position.y + 1.6,
+        player.position.z
+    );
+
+
+    camera.rotation.order =
+        "YXZ";
+
+
+    camera.rotation.y =
+        yaw;
+
+
+    camera.rotation.x =
+        pitch;
+}
+
+
+/* =========================================================
+   RAYCASTER
+========================================================= */
+
+const raycaster =
+    new THREE.Raycaster();
+
+
+function getTargetBlock() {
+
+    raycaster.setFromCamera(
+        new THREE.Vector2(0, 0),
+        camera
+    );
+
+
+    const blocks =
+        Array.from(
+            world.values()
+        );
+
+
+    const hits =
+        raycaster.intersectObjects(
+            blocks
+        );
+
+
+    if (
+        hits.length === 0
+    ) {
+
+        return null;
+    }
+
+
+    const hit =
+        hits[0];
+
+
+    if (
+        hit.distance > 7
+    ) {
+
+        return null;
+    }
+
+
+    return hit;
+}
+
+
+/* =========================================================
+   CASSER
+========================================================= */
+
+function breakBlock() {
+
+    const hit =
+        getTargetBlock();
+
+
+    if (!hit) {
+
+        return;
+    }
+
+
+    const block =
+        hit.object;
+
+
+    const x =
+        block.userData.x;
+
+    const y =
+        block.userData.y;
+
+    const z =
+        block.userData.z;
+
+
+    /*
+       Bedrock incassable
+    */
+
+    if (
+        block.userData.type ===
+        "bedrock"
+    ) {
+
+        return;
+    }
+
+
+    removeBlock(
+        x,
+        y,
+        z
+    );
+}
+
+
+/* =========================================================
+   POSER
+========================================================= */
+
+function placeBlock() {
+
+    const hit =
+        getTargetBlock();
+
+
+    if (!hit) {
+
+        return;
+    }
+
+
+    const block =
+        hit.object;
+
+
+    const normal =
+        hit.face.normal;
+
+
+    const x =
+        block.userData.x +
+        normal.x;
+
+    const y =
+        block.userData.y +
+        normal.y;
+
+    const z =
+        block.userData.z +
+        normal.z;
+
+
+    /*
+       Empêcher de placer un bloc
+       à l'intérieur du joueur.
+    */
+
+    const playerMinX =
+        player.position.x -
+        player.width / 2;
+
+    const playerMaxX =
+        player.position.x +
+        player.width / 2;
+
+
+    const playerMinY =
+        player.position.y;
+
+    const playerMaxY =
+        player.position.y +
+        player.height;
+
+
+    const playerMinZ =
+        player.position.z -
+        player.width / 2;
+
+    const playerMaxZ =
+        player.position.z +
+        player.width / 2;
+
+
+    const collision =
+
+        playerMaxX > x &&
+        playerMinX < x + 1 &&
+
+        playerMaxY > y &&
+        playerMinY < y + 1 &&
+
+        playerMaxZ > z &&
+        playerMinZ < z + 1;
+
+
+    if (collision) {
+
+        return;
+    }
+
+
+    addBlock(
+        x,
+        y,
+        z,
+        selectedBlock
+    );
+}
+
+
+/* =========================================================
+   HOTBAR
+========================================================= */
+
+const hotbarBlocks = [
+
+    "herbe",
+    "terre",
+    "pierre",
+    "buche",
+    "feuille",
+    "planche",
+    "vitre",
+    "bedrock"
+
+];
+
+
+let selectedBlock =
+    "herbe";
+
+
+const hotbar =
+    document.getElementById(
+        "hotbar"
+    );
+
+
+function createHotbar() {
+
+    hotbar.innerHTML = "";
+
+
+    hotbarBlocks.forEach(
+        (type, index) => {
+
+            const slot =
+                document.createElement(
+                    "div"
+                );
+
+
+            slot.className =
+                "slot";
+
+
+            if (
+                index === 0
+            ) {
+
+                slot.classList.add(
+                    "selected"
+                );
+            }
+
+
+            const image =
+                document.createElement(
+                    "img"
+                );
+
+
+            /*
+               Pour la miniature,
+               on utilise une texture
+               du dessus si elle existe.
+            */
+
+            const data =
+                BLOCK_TYPES[type];
+
+
+            if (
+                data.multiFace
+            ) {
+
+                image.src =
+                    TEXTURE_PATH +
+                    data.folder +
+                    "/dessus_" +
+                    data.folder +
+                    ".png";
+
+            } else {
+
+                image.src =
+                    TEXTURE_PATH +
+                    data.folder +
+                    "/" +
+                    data.folder +
+                    ".png";
+            }
+
+
+            image.onerror = () => {
+
+                image.style.display =
+                    "none";
+            };
+
+
+            const number =
+                document.createElement(
+                    "div"
+                );
+
+
+            number.className =
+                "slot-number";
+
+
+            number.textContent =
+                index + 1;
+
+
+            slot.appendChild(image);
+
+            slot.appendChild(number);
+
+
+            slot.addEventListener(
+                "click",
+                () => {
+
+                    selectSlot(index);
+                }
+            );
+
+
+            hotbar.appendChild(slot);
+        }
+    );
+}
+
+
+function selectSlot(index) {
+
+    if (
+        index < 0 ||
+        index >= hotbarBlocks.length
+    ) {
+
+        return;
+    }
+
+
+    selectedBlock =
+        hotbarBlocks[index];
+
+
+    const slots =
+        document.querySelectorAll(
+            ".slot"
+        );
+
+
+    slots.forEach(
+        slot =>
+            slot.classList.remove(
+                "selected"
+            )
+    );
+
+
+    if (slots[index]) {
+
+        slots[index].classList.add(
+            "selected"
+        );
+    }
+}
+
+
+createHotbar();
+
+
+/* =========================================================
+   CLICS
+========================================================= */
+
+renderer.domElement.addEventListener(
+    "contextmenu",
+    event => {
+
+        event.preventDefault();
+    }
+);
+
+
+renderer.domElement.addEventListener(
+    "mousedown",
+    event => {
+
+        if (
+            document.pointerLockElement !==
+            renderer.domElement
+        ) {
+
+            return;
+        }
+
+
+        if (
+            event.button === 0
+        ) {
+
+            breakBlock();
+        }
+
+
+        if (
+            event.button === 2
+        ) {
+
+            placeBlock();
+        }
+    }
+);
+
+
+/* =========================================================
+   DÉMARRAGE
+========================================================= */
+
+const startScreen =
+    document.getElementById(
+        "startScreen"
+    );
+
+
+const playButton =
+    document.getElementById(
+        "playButton"
+    );
+
+
+playButton.addEventListener(
+    "click",
+    () => {
+
+        startScreen.style.display =
+            "none";
+
+
+        renderer.domElement.requestPointerLock();
+    }
+);
+
+
+/* =========================================================
+   ESC
+========================================================= */
+
+document.addEventListener(
+    "pointerlockchange",
+    () => {
+
+        if (
+            document.pointerLockElement !==
+            renderer.domElement
+        ) {
+
+            startScreen.style.display =
+                "flex";
+        }
+    }
+);
+
+
+/* =========================================================
+   REDIMENSIONNEMENT
+========================================================= */
+
+window.addEventListener(
+    "resize",
+    () => {
+
+        camera.aspect =
+            window.innerWidth /
+            window.innerHeight;
+
+
+        camera.updateProjectionMatrix();
+
+
+        renderer.setSize(
+            window.innerWidth,
+            window.innerHeight
+        );
+    }
+);
+
+
+/* =========================================================
+   FPS
+========================================================= */
+
+const fpsElement =
+    document.getElementById(
+        "fps"
+    );
+
+
+let fpsFrames = 0;
+
+let fpsTimer =
+    performance.now();
+
+
+/* =========================================================
+   BOUCLE
+========================================================= */
+
+let previousTime =
+    performance.now();
+
+
+function animate() {
+
+    requestAnimationFrame(
+        animate
+    );
+
+
+    const currentTime =
+        performance.now();
+
+
+    let delta =
+        (currentTime -
+        previousTime) /
+        1000;
+
+
+    previousTime =
+        currentTime;
+
+
+    /*
+       Évite les gros sauts
+       après un changement d'onglet.
+    */
+
+    delta =
+        Math.min(
+            delta,
+            0.05
+        );
+
+
+    updatePlayer(delta);
+
+
+    renderer.render(
+        scene,
+        camera
+    );
+
+
+    /*
+       FPS
+    */
+
+    fpsFrames++;
+
+
+    if (
+        currentTime -
+        fpsTimer >=
+        1000
+    ) {
+
+        fpsElement.textContent =
+            "FPS : " +
+            fpsFrames;
+
+
+        fpsFrames = 0;
+
+        fpsTimer =
+            currentTime;
+    }
+}
+
+
+animate();
+
+</script>
+
+</body>
+</html>
